@@ -1,0 +1,92 @@
+* Pandas Basics
+
+** Indexing
+- Always use .loc .iloc explicitly
+- ~df[val]~ Select single column or sequence of columns from the
+  DataFrame; *special case conveniences*: boolean array (filter
+  rows), slice (slice rows), or boolean DataFrame (set values
+  based on some criterion) these select rows
+- Indexing returns a ~view~. in-place modifications to the ~Series~
+  will be reflected in ~DataFrame~
+- Using NumPy functions or NumPy-like operations, such as
+  filtering with a boolean array, scalar multiplication, or
+  applying math functions, will preserve the index-value link
+  (p143)
+*** Label Indexing
+- Label Slicing: [a:b] contains b rather than b-1 in python / numpy
+#+BEGIN_SRC python
+In [144]: ser
+Out[144]:
+    0    0.0
+    1    1.0
+    2 2.0
+    dtype: float64
+In [147]: ser[:1]
+Out[147]:
+    0    0.0
+    dtype: float64
+In [148]: ser.loc[:1]
+Out[148]:
+    0    0.0
+    1    1.0
+    dtype: float64
+In [149]: ser.iloc[:1]
+Out[149]:
+    0    0.0
+    dtype: float64
+
+#+END_SRC
+
+- Label Slicing: It does not magically generate a list of
+  indexes. It slices according to labels' position (p159)
+
+#+BEGIN_SRC python
+  import pandas as pd
+  obj = pd.Series(np.arange(5.), index=['a', 'b', 'awef','c', 'd'])
+  obj['b':'c']
+  # in this example, awef between b and c does not following
+  # alphabetic order, but still work according to their positions
+  # Output:
+  # b       1.0
+  # awef    2.0
+  # c       3.0
+  # dtype: float64
+#+END_SRC
+*** Tricks
+**** Get row, columns integer index from DataFrame (p182)
+#+BEGIN_SRC python
+# using pandas DataFrame:
+df = pd.DataFrame(np.random.randn(4,3), columns=list('abc'), index =['Utah', 'Ohio', 'Texas', 'Oregon'])
+print(df)
+# returns labels index not integer index
+# Series index:column_label values: row_label
+id_max = df.idxmax()
+# get_indexer returns integer index from Index, ndarray, 
+# list etc objects
+row_id = df.index.get_indexer(id_max)
+col_id = df.columns.get_indexer(id_max.index)
+row_col_id = list(zip(row_id, col_id))
+row_col_id
+
+# Using numpy argmax:
+ur = lambda x: np.unravel_index(x.values.argmax(),df.shape)
+df.apply(ur)
+#+END_SRC
+
+** Arithmetic and Data Alignment
+- Arithmetic of two objects results *union* both index and column
+  axis. Missing values from either objects results in ~NaN~
+- *Arithmetic* operations like ~add, sub, div, mul, pow~
+  *preserves* ~NaN~ (but have ~fill_value~ arg to fill missing
+  values).
+- *Reduction* operations like ~sum, max~ *exclude* ~NaN~ (have
+  arg ~skipna~)
+- Broadcast is done by matching. Default is matching column,
+  namely broadcast along rows. ~df1.sub(series1, axis='index')~
+  is matching by index and broadcast along columns
+*** Mapping
+- ~df.apply~ is invoked once *on each column* in frame. The
+  result is a *Series* having the columns of frame as its index.
+- The function passed to apply need not return a scalar value; it
+  can also return a Series with *multiple* values (p170)
+
